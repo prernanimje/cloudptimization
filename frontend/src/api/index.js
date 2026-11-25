@@ -1,9 +1,17 @@
 import axios from 'axios';
 
+const defaultLiveBackend = 'https://cloudoptimization-blue.vercel.app';
+
+// Detect whether running in browser in production (outside localhost)
+const isCloudBrowser =
+  typeof window !== 'undefined' &&
+  window.location.hostname !== 'localhost' &&
+  window.location.hostname !== '127.0.0.1';
+
 const rawOrigin = (
   import.meta?.env?.VITE_API_URL ||
   import.meta?.env?.VITE_BACKEND_URL ||
-  ''
+  (isCloudBrowser ? defaultLiveBackend : '')
 ).trim().replace(/\/$/, '');
 
 // Backend mounts all routers under `/api` (see `backend/app/main.py`).

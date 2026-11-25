@@ -31,13 +31,13 @@ const CostBreakdownPieChart = ({ monthlyCost, cpuUsage, ramUsage, storageUsage }
     };
 
     return (
-        <div style={{ width: '100%', height: 250 }}>
+        <div style={{ width: '100%', height: 180 }}>
             <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                     <Pie
                         data={data}
-                        innerRadius={60}
-                        outerRadius={80}
+                        innerRadius={45}
+                        outerRadius={65}
                         paddingAngle={5}
                         dataKey="value"
                     >
@@ -46,7 +46,7 @@ const CostBreakdownPieChart = ({ monthlyCost, cpuUsage, ramUsage, storageUsage }
                         ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} />
-                    <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '13px', color: '#a1a1aa' }} />
+                    <Legend verticalAlign="bottom" height={30} wrapperStyle={{ fontSize: '11px', color: '#a1a1aa' }} />
                 </PieChart>
             </ResponsiveContainer>
         </div>

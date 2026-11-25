@@ -27,12 +27,12 @@ export const StorageChart = ({ storageUsage = 0, storageCapacity = 50 }) => {
 
   return (
     <div style={{ padding: '0px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.8fr', gap: '40px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.8fr', gap: '20px', alignItems: 'start' }}>
 
         {/* Left: Radial Bar Gauge */}
         <div>
-          <h3 className="text-lg font-semibold mb-6">Storage Usage</h3>
-          <div style={{ position: 'relative', width: '100%', height: '220px' }}>
+          <h3 className="text-base font-semibold mb-3">Storage Usage</h3>
+          <div style={{ position: 'relative', width: '100%', height: '180px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <RadialBarChart
                 cx="50%"

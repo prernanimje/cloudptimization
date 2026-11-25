@@ -162,29 +162,29 @@ export const Dashboard = ({ instances = [], selectedInstance, setSelectedInstanc
       {selectedInstance && (
         <>
           {/* Main Content Layout Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px', marginBottom: '32px' }}>
-            {/* Responsively handled via CSS or inline styles: normally you'd use a class, but we can do inline grid for large screens */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 13fr) minmax(0, 3fr)', gap: '32px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '16px' }}>
+            {/* Responsively handled via CSS or inline styles */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 13fr) minmax(0, 3fr)', gap: '16px' }}>
 
               {/* Left Column: CPU, RAM, Cost */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', height: '100%' }}>
-                <div className="dark-card stagger-card stagger-delay-1" style={{ padding: '24px' }}>
-                  <h3 className="section-title" style={{ marginTop: 0, marginBottom: '24px' }}>System Performance</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', height: '100%' }}>
+                <div className="dark-card stagger-card stagger-delay-1" style={{ padding: '16px' }}>
+                  <h3 className="section-title" style={{ marginTop: 0, marginBottom: '14px' }}>System Performance</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     {/* Inner CPU Card */}
                     <div className="monitor-card">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00f3ff', boxShadow: '0 0 5px #00f3ff' }}></div>
-                        <h4 style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>CPU MONITOR</h4>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                        <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#00f3ff', boxShadow: '0 0 5px #00f3ff' }}></div>
+                        <h4 style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-primary)' }}>CPU MONITOR</h4>
                       </div>
                       <CPUChart data={metrics} loading={loading} />
                     </div>
 
                     {/* Inner RAM Card */}
                     <div className="monitor-card">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ff00f3', boxShadow: '0 0 5px #ff00f3' }}></div>
-                        <h4 style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>RAM MONITOR</h4>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+                        <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#ff00f3', boxShadow: '0 0 5px #ff00f3' }}></div>
+                        <h4 style={{ fontWeight: 600, fontSize: '0.8rem', color: 'var(--text-primary)' }}>RAM MONITOR</h4>
                       </div>
                       <RAMChart data={metrics} loading={loading} />
                     </div>
@@ -194,7 +194,7 @@ export const Dashboard = ({ instances = [], selectedInstance, setSelectedInstanc
                 {/* Cost Analysis */}
                 {analysis && (
                   <div className="dark-card stagger-card stagger-delay-2">
-                    <h4 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '24px' }}>Cost Analysis & Insights</h4>
+                    <h4 style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '14px' }}>Cost Analysis & Insights</h4>
                     <div className="cost-grid">
                       <div className="cost-card cost-card-blue">
                         <div className="cost-card-info">
@@ -228,7 +228,7 @@ export const Dashboard = ({ instances = [], selectedInstance, setSelectedInstanc
               </div>
 
               {/* Right Column: Quick Stats */}
-              <div className="stagger-card stagger-delay-3" style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '24px' }}>
+              <div className="stagger-card stagger-delay-3" style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '14px' }}>
                 <div style={{ flex: 'none' }}>
                   <InfoCards
                     region={selectedInstance.region}
@@ -240,8 +240,8 @@ export const Dashboard = ({ instances = [], selectedInstance, setSelectedInstanc
                   />
                 </div>
                 {/* Cost Breakdown Mini Graph */}
-                <div className="dark-card" style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column' }}>
-                  <h3 className="section-title" style={{ marginTop: 0, marginBottom: '8px', fontSize: '1.1rem' }}>Cost Breakdown Distribution</h3>
+                <div className="dark-card" style={{ flex: 1, padding: '16px', display: 'flex', flexDirection: 'column' }}>
+                  <h3 className="section-title" style={{ marginTop: 0, marginBottom: '6px', fontSize: '0.95rem' }}>Cost Breakdown Distribution</h3>
                   <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <CostBreakdownPieChart
                       monthlyCost={selectedInstance.monthly_cost}
@@ -257,7 +257,7 @@ export const Dashboard = ({ instances = [], selectedInstance, setSelectedInstanc
           </div>
 
           {/* Storage and Uptime Full Width Grid */}
-          <div className="stagger-card stagger-delay-4" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '32px' }}>
+          <div className="stagger-card stagger-delay-4" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
             <div className="dark-card">
               <StorageChart
                 storageUsage={selectedInstance.storage_usage}

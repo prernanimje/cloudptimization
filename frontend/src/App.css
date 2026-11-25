@@ -2,6 +2,11 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
+html {
+  font-size: 14px;
+  -webkit-text-size-adjust: 100%;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -18,8 +23,8 @@ body {
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {

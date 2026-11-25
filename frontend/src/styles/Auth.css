@@ -39,20 +39,17 @@
 
 /* Card */
 .auth-card {
-  max-width: 490px; 
-    width: 100%;
-    padding: 21px;
-    border-radius: 43px;
-    /* background: var(--auth-card-bg); */
-    /* backdrop-filter: saturate(180%) blur(20px); */
-    animation: slideUpFade 0.5s ease-out;
-
+  max-width: 400px; 
+  width: 100%;
+  padding: 18px;
+  border-radius: 24px;
+  animation: slideUpFade 0.5s ease-out;
 }
 
 @keyframes slideUpFade {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
@@ -65,15 +62,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
   text-align: center;
 }
 
 .auth-logo {
-  width: 56px;
-  height: 56px;
-  font-size: 28px;
-  margin-bottom: 20px;
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+  margin-bottom: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -82,46 +79,46 @@
 .auth-title {
   margin: 0;
   color: var(--text-primary);
-  font-size: 2rem;
+  font-size: 1.45rem;
   font-weight: 700;
   line-height: 1.2;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
 }
 
 .auth-subtitle {
   color: var(--text-secondary);
-  margin-top: 12px;
-  font-size: 1rem;
+  margin-top: 6px;
+  font-size: 0.85rem;
   font-weight: 400;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.2px;
 }
 
 /* Tab Toggle */
 .auth-tab-toggle {
   display: flex;
-  gap: 8px;
-  margin-bottom: 32px;
+  gap: 6px;
+  margin-bottom: 20px;
   background: var(--auth-tab-inactive-bg);
-  padding: 6px;
-  border-radius: 12px;
+  padding: 4px;
+  border-radius: 10px;
 }
 
 .auth-tab-button {
   flex: 1;
-  padding: 12px 18px;
-  border-radius: 10px;
+  padding: 8px 14px;
+  border-radius: 8px;
   border: none;
   background: transparent;
   color: var(--text-secondary);
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  letter-spacing: -0.3px;
+  gap: 6px;
+  letter-spacing: -0.2px;
 }
 
 .auth-tab-button:hover {

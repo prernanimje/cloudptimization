@@ -24,7 +24,7 @@ export const RAMChart = ({ data = [], loading = false }) => {
   return (
     <div>
       {hasData ? (
-        <ResponsiveContainer width="100%" height={280}>
+        <ResponsiveContainer width="100%" height={210}>
           <AreaChart data={chartData}>
             <defs>
               <linearGradient id="colorRam" x1="0" y1="0" x2="0" y2="1">

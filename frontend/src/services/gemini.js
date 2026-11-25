@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { analysisAPI } from '../api';
 
 // Clean and extract API key from environment variables
 const getApiKey = () => {
@@ -26,9 +27,24 @@ const fallbackModels = [
  * @returns {Promise<string>} The AI response text
  */
 export const generateGeminiResponse = async (prompt, contextData, fileData = null) => {
+    // 1. Try secure backend endpoint first (keeps API key hidden in backend)
+    try {
+        const res = await analysisAPI.chat({
+            prompt,
+            context: contextData,
+            file_data: fileData
+        });
+        if (res && res.response) {
+            return res.response;
+        }
+    } catch (backendErr) {
+        console.warn("Backend Gemini chat endpoint unavailable, checking client fallback:", backendErr);
+    }
+
+    // 2. Client-side fallback if VITE_GEMINI_API_KEY is present
     const key = getApiKey();
     if (!key || key === 'your-gemini-api-key-here') {
-        return "Error: Gemini API Key is missing. Please add VITE_GEMINI_API_KEY to your frontend/.env file.";
+        return "Error: Gemini API Key is missing. Please add GEMINI_API_KEY to your backend environment variables.";
     }
 
     let genAI;

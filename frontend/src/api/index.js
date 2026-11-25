@@ -63,6 +63,7 @@ export const analysisAPI = {
   analyzeByName: async (instanceName) =>
     unwrap(await client.get(`/analyze/instance/${encodeURIComponent(instanceName)}`)),
   getRecommendations: async (payload) => unwrap(await client.post('/recommendations', payload)),
+  chat: async (payload) => unwrap(await client.post('/chat', payload)),
 };
 
 export const metricsAPI = {

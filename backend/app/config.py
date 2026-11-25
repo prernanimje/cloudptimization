@@ -32,6 +32,7 @@ if DATABASE_URL.startswith("sqlite:///./") or DATABASE_URL.startswith("sqlite://
 # API Keys
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "your-openai-api-key-here")
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY", "your-sendgrid-api-key-here")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", os.getenv("GOOGLE_API_KEY", "")).strip().strip('"').strip("'")
 
 # Email Configuration
 EMAIL_FROM = os.getenv("EMAIL_FROM", "alerts@cloudoptimization.com")

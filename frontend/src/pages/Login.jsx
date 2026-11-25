@@ -18,10 +18,17 @@ const Login = () => {
         try {
             setError('');
             setLoading(true);
-            await login(username, password);
+            await login(username.trim(), password);
             navigate('/app');
         } catch (err) {
-            setError('Failed to log in. Please check your credentials.');
+            const detail = err.response?.data?.detail;
+            if (!err.response) {
+                setError('Cannot reach backend server. Please verify backend is running and VITE_API_URL is configured.');
+            } else if (detail) {
+                setError(typeof detail === 'string' ? detail : JSON.stringify(detail));
+            } else {
+                setError('Failed to log in. Please check your credentials.');
+            }
             console.error(err);
         } finally {
             setLoading(false);

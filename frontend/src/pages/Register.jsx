@@ -19,10 +19,17 @@ const Register = () => {
         try {
             setError('');
             setLoading(true);
-            await register(email, username, password);
+            await register(email.trim(), username.trim(), password);
             navigate('/app');
         } catch (err) {
-            setError('Failed to create account. User might already exist.');
+            const detail = err.response?.data?.detail;
+            if (!err.response) {
+                setError('Cannot reach backend server. Please verify backend is running and VITE_API_URL is configured.');
+            } else if (detail) {
+                setError(typeof detail === 'string' ? detail : JSON.stringify(detail));
+            } else {
+                setError('Failed to create account. User might already exist.');
+            }
             console.error(err);
         } finally {
             setLoading(false);

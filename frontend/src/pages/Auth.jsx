@@ -15,6 +15,29 @@ const AuthPage = ({ initialMode = 'login' }) => {
     const { login, register } = useAuth();
     const navigate = useNavigate();
 
+    const getErrorMessage = (err, fallback) => {
+        if (!err.response) {
+            return 'Cannot connect to backend server. Please verify your backend is running and VITE_API_URL is properly configured.';
+        }
+        const data = err.response.data;
+        if (data?.detail) {
+            if (Array.isArray(data.detail)) {
+                return data.detail.map((d) => d.msg || d.detail || JSON.stringify(d)).join(', ');
+            }
+            return typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail);
+        }
+        if (typeof data === 'string' && (data.includes('<!DOCTYPE') || data.includes('<html'))) {
+            return 'Backend returned HTML instead of JSON. Check your VITE_API_URL configuration.';
+        }
+        if (err.response.status === 404) {
+            return 'Auth endpoint not found (404). Please verify your backend API URL.';
+        }
+        if (err.response.status === 500) {
+            return 'Backend server error (500). Please check backend database and logs.';
+        }
+        return fallback;
+    };
+
     const handleLoginSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -23,14 +46,7 @@ const AuthPage = ({ initialMode = 'login' }) => {
             await login(username.trim(), password);
             navigate('/app');
         } catch (err) {
-            const detail = err.response?.data?.detail;
-            if (detail) {
-                setError(typeof detail === 'string' ? detail : JSON.stringify(detail));
-            } else if (err.response?.status === 500) {
-                setError('Cannot reach backend server. Please ensure the backend is running on port 8000.');
-            } else {
-                setError('Failed to log in. Please check your credentials.');
-            }
+            setError(getErrorMessage(err, 'Failed to log in. Please check your credentials.'));
             console.error(err);
         } finally {
             setLoading(false);
@@ -45,14 +61,7 @@ const AuthPage = ({ initialMode = 'login' }) => {
             await register(email.trim(), username.trim(), password);
             navigate('/app');
         } catch (err) {
-            const detail = err.response?.data?.detail;
-            if (detail) {
-                setError(typeof detail === 'string' ? detail : JSON.stringify(detail));
-            } else if (err.response?.status === 500) {
-                setError('Cannot reach backend server. Please ensure the backend is running on port 8000.');
-            } else {
-                setError('Failed to create account. Please check your information.');
-            }
+            setError(getErrorMessage(err, 'Failed to create account. Please check your information.'));
             console.error(err);
         } finally {
             setLoading(false);

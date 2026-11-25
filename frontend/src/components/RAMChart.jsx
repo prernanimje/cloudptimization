@@ -46,7 +46,7 @@ export const RAMChart = ({ data = [], loading = false }) => {
             <Tooltip
               formatter={(value) => `${value.toFixed(2)}%`}
               labelFormatter={(label) => `${label}h ago`}
-              contentStyle={{ backgroundColor: 'var(--bg-card)', borderRadius: '20px', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
+              contentStyle={{ backgroundColor: 'var(--bg-card)', borderRadius: '12px', borderColor: 'var(--border-color)', color: 'var(--text-primary)' }}
             />
             <Legend />
             <Area

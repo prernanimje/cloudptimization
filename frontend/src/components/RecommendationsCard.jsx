@@ -13,61 +13,55 @@ export const RecommendationsCard = ({ instance = null, analysis = null, loading 
   const [aiLoading, setAiLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Use an effect to fetch actual AI recommendations when the instance changes
-  useEffect(() => {
-    let mounted = true;
+  const fetchAIRecommendations = async (force = false) => {
+    if (!instance || !instance.id) return;
 
-    const fetchAIRecommendations = async () => {
-      if (!instance || !instance.id) return;
-
-      const cacheKey = `gemini_cache_instance_${instance.id}`;
+    const cacheKey = `gemini_cache_instance_${instance.id}`;
+    if (force) {
+      sessionStorage.removeItem(cacheKey);
+    } else {
       const cachedData = sessionStorage.getItem(cacheKey);
-
-      if (cachedData) {
+      if (cachedData && !cachedData.startsWith("Error:") && !cachedData.startsWith("I encountered an error")) {
         setAiRecommendation(cachedData);
         return;
+      } else {
+        sessionStorage.removeItem(cacheKey);
       }
+    }
 
-      setAiLoading(true);
-      setError(null);
+    setAiLoading(true);
+    setError(null);
 
-      try {
-        const prompt = `Please act as a Cloud Cost Optimization FinOps AI. Analyze this specific instance based on real-time metrics. Provide 3 highly specific, clear, actionable recommendations (in markdown bullet points) to optimize its costs and performance. Be concise.`;
+    try {
+      const prompt = `Please act as a Cloud Cost Optimization FinOps AI. Analyze this specific instance based on real-time metrics. Provide 3 highly specific, clear, actionable recommendations (in markdown bullet points) to optimize its costs and performance. Be concise.`;
 
-        const resp = await generateGeminiResponse(prompt, instance);
+      const resp = await generateGeminiResponse(prompt, instance);
 
-        if (mounted) {
-          setAiRecommendation(resp);
-          sessionStorage.setItem(cacheKey, resp);
-        }
-      } catch (err) {
-        if (mounted) {
-          const errMsg = err.message || '';
-          if (errMsg.includes('429') || errMsg.includes('Quota exceeded')) {
-            setError("Google Gemini Free Tier limit reached. Serving latest rule-based insights below instead.");
-            // Fallback to rule-based analysis if available
-            if (analysis && analysis.recommendations) {
-              const ruleBasedFallback = analysis.recommendations.map(r => `* **${r.action}**: ${r.reason} (Savings: $${r.savings.toFixed(2)})`).join('\n\n');
-              setAiRecommendation(`### Fallback: Rule-Based Recommendations\n\n${ruleBasedFallback}`);
-            }
-          } else {
-            setError("Failed to fetch AI recommendations. Please try again later.");
-          }
-          console.warn("Gemini API Error handled gracefully:", err);
-        }
-      } finally {
-        if (mounted) {
-          setAiLoading(false);
-        }
+      setAiRecommendation(resp);
+      if (resp && !resp.startsWith("Error:") && !resp.startsWith("I encountered an error")) {
+        sessionStorage.setItem(cacheKey, resp);
       }
-    };
+    } catch (err) {
+      const errMsg = err.message || '';
+      if (errMsg.includes('429') || errMsg.includes('Quota exceeded')) {
+        setError("Google Gemini Free Tier limit reached. Serving latest rule-based insights below instead.");
+        // Fallback to rule-based analysis if available
+        if (analysis && analysis.recommendations) {
+          const ruleBasedFallback = analysis.recommendations.map(r => `* **${r.action}**: ${r.reason} (Savings: $${r.savings.toFixed(2)})`).join('\n\n');
+          setAiRecommendation(`### Fallback: Rule-Based Recommendations\n\n${ruleBasedFallback}`);
+        }
+      } else {
+        setError("Failed to fetch AI recommendations. Please try again.");
+      }
+      console.warn("Gemini API Error handled gracefully:", err);
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchAIRecommendations();
-
-    return () => {
-      mounted = false;
-    };
-  }, [instance?.id]); // Only re-fetch when instance ID changes to save API calls
+  }, [instance?.id]);
 
   if (loading && !aiRecommendation) {
     return (
@@ -82,17 +76,41 @@ export const RecommendationsCard = ({ instance = null, analysis = null, loading 
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h3 className="recommendation-header-title">
           <Bot className="recommendation-bot-icon" />
           True AI Recommendations
         </h3>
-        {aiLoading && (
-          <div className="recommendation-loading-badge">
-            <RefreshCw size={14} className="animate-spin" />
-            Generating Insights...
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {aiLoading ? (
+            <div className="recommendation-loading-badge">
+              <RefreshCw size={14} className="animate-spin" />
+              Generating Insights...
+            </div>
+          ) : (
+            <button
+              onClick={() => fetchAIRecommendations(true)}
+              disabled={aiLoading}
+              title="Click to generate fresh AI recommendations"
+              style={{
+                background: 'rgba(59, 130, 246, 0.1)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                color: '#60a5fa',
+                borderRadius: '8px',
+                padding: '6px 12px',
+                fontSize: '0.8rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                fontWeight: 500
+              }}
+            >
+              <RefreshCw size={12} />
+              Regenerate AI Insights
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Dynamic AI Analysis Generated by Gemini */}
@@ -104,9 +122,27 @@ export const RecommendationsCard = ({ instance = null, analysis = null, loading 
               <span className="font-semibold text-lg">NeuroNest is Thinking...</span>
             </div>
           </div>
-        ) : error ? (
-          <div className="text-red-500 text-sm flex items-center gap-2 p-4 bg-red-500/10 rounded-lg border border-red-500/20">
-            <span>🚨</span> {error}
+        ) : error || (aiRecommendation && (aiRecommendation.startsWith("Error:") || aiRecommendation.startsWith("I encountered an error"))) ? (
+          <div className="p-4 bg-red-500/10 rounded-lg border border-red-500/20 text-sm">
+            <div className="text-red-400 flex items-center gap-2 mb-2 font-medium">
+              <span>🚨</span> {error || aiRecommendation}
+            </div>
+            <button
+              onClick={() => fetchAIRecommendations(true)}
+              style={{
+                marginTop: '8px',
+                padding: '4px 12px',
+                background: 'rgba(239, 68, 68, 0.2)',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                color: '#fca5a5',
+                borderRadius: '6px',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              Retry AI Analysis
+            </button>
           </div>
         ) : aiRecommendation ? (
           <div className="prose-container">

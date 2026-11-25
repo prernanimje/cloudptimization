@@ -81,7 +81,7 @@ const ActiveAlerts = ({ alerts }) => {
                             gap: '14px',
                             padding: '16px',
                             background: getBackground(alert.severity),
-                            borderRadius: '20px',
+                            borderRadius: '10px',
                             borderLeft: `4px solid ${getBorderColor(alert.severity)}`,
                             transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                             cursor: 'default',

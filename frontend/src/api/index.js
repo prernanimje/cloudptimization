@@ -1,13 +1,16 @@
 import axios from 'axios';
 
-const API_ORIGIN =
+const rawOrigin = (
   import.meta?.env?.VITE_API_URL ||
   import.meta?.env?.VITE_BACKEND_URL ||
-  '';
+  ''
+).trim().replace(/\/$/, '');
 
 // Backend mounts all routers under `/api` (see `backend/app/main.py`).
-// In dev, Vite proxies `/api` -> backend, so we can use a same-origin baseURL.
-const API_BASE_URL = API_ORIGIN ? `${API_ORIGIN.replace(/\/$/, '')}/api` : '/api';
+// If VITE_API_URL already contains `/api` at the end, don't duplicate it.
+const API_BASE_URL = rawOrigin
+  ? (rawOrigin.endsWith('/api') ? rawOrigin : `${rawOrigin}/api`)
+  : '/api';
 
 const client = axios.create({
   baseURL: API_BASE_URL,

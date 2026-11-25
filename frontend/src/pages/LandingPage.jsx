@@ -16,6 +16,11 @@ const LandingPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  // Ensure landing page starts at the top
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // Apply theme globally, dark by default
   useEffect(() => {
     if (theme === 'dark') {
@@ -56,56 +61,40 @@ const LandingPage = () => {
     animate: { y: [-10, 10, -10], transition: { duration: 4, repeat: Infinity, ease: 'easeInOut' } },
   };
 
-  // Auto-scroll through sections once on first visit, then reveal auth after 4 sec on last page
+  // Auto-scroll through sections once on first visit, then reveal auth
   useEffect(() => {
     const sections = Array.from(document.querySelectorAll('.lp-section'));
     if (!sections.length) return;
 
     let index = 0;
-    let timeoutId = null;
     const interval = setInterval(() => {
       index += 1;
       if (index < sections.length) {
         sections[index].scrollIntoView({ behavior: 'smooth', block: 'start' });
       } else {
         clearInterval(interval);
-        // Wait 3 seconds on last page before showing auth overlay
-        timeoutId = setTimeout(() => {
-          setShowAuthOverlay(true);
-          setHasTriggeredAuth(true);
-        }, 3000);
+        setShowAuthOverlay(true);
+        setHasTriggeredAuth(true);
       }
     }, 2200);
 
-    return () => {
-      clearInterval(interval);
-      if (timeoutId) clearTimeout(timeoutId);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   // Also trigger auth overlay when user manually scrolls to the bottom
   useEffect(() => {
-    let timeoutId = null;
-
     const onScroll = () => {
       if (hasTriggeredAuth || showAuthOverlay) return;
       const scrollPos = window.innerHeight + window.scrollY;
       const docHeight = document.body.offsetHeight;
       if (scrollPos >= docHeight - 50) {
-        // Wait 3 seconds on last page before showing auth overlay
-        timeoutId = setTimeout(() => {
-          setShowAuthOverlay(true);
-          setHasTriggeredAuth(true);
-        }, 3000);
-        window.removeEventListener('scroll', onScroll);
+        setShowAuthOverlay(true);
+        setHasTriggeredAuth(true);
       }
     };
 
     window.addEventListener('scroll', onScroll);
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      if (timeoutId) clearTimeout(timeoutId);
-    };
+    return () => window.removeEventListener('scroll', onScroll);
   }, [hasTriggeredAuth, showAuthOverlay]);
 
   return (

@@ -1,12 +1,14 @@
 """Routes for analysis and recommendations"""
 import logging
+from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Instance
+from ..models import Instance, User
 from ..services.optimizer import OptimizerService
 from ..schemas import AnalysisResult
+from ..utils.security import get_optional_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -61,17 +63,28 @@ async def analyze_by_name(instance_name: str, db: Session = Depends(get_db)):
 
 
 @router.post("/recommendations")
-async def get_all_recommendations(db: Session = Depends(get_db)):
+async def get_all_recommendations(
+    current_user: Optional[User] = Depends(get_optional_current_user),
+    db: Session = Depends(get_db)
+):
     """
-    Get recommendations for all instances
+    Get recommendations for all instances for the current user
+    """
+    if not current_user:
+        return {
+            "total_instances": 0,
+            "total_potential_savings": 0.0,
+            "analyses": []
+        }
     
-    Returns:
-        List of analyses for all instances with recommendations
-    """
-    instances = db.query(Instance).all()
+    instances = db.query(Instance).filter(Instance.user_id == current_user.id).all()
     
     if not instances:
-        raise HTTPException(status_code=404, detail="No instances found")
+        return {
+            "total_instances": 0,
+            "total_potential_savings": 0.0,
+            "analyses": []
+        }
     
     try:
         analyses = []
@@ -82,7 +95,7 @@ async def get_all_recommendations(db: Session = Depends(get_db)):
             analyses.append(analysis)
             total_savings += sum(r.savings for r in analysis.recommendations)
         
-        logger.info(f"Analyzed {len(instances)} instances. Total potential savings: ${total_savings:.2f}")
+        logger.info(f"Analyzed {len(instances)} instances for user {current_user.username}. Potential savings: ${total_savings:.2f}")
         
         return {
             "total_instances": len(instances),

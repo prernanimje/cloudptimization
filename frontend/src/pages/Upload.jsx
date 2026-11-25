@@ -3,15 +3,16 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Upload, Download, CheckCircle, AlertCircle, Bot } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Upload, Download, CheckCircle, AlertCircle, Bot, UploadCloud, LayoutDashboard } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { uploadAPI } from '../api';
 import { generateGeminiResponse } from '../services/gemini';
 import '../styles/UploadStyle.css';
 
-export const UploadPage = () => {
+export const UploadPage = ({ instances = [], refreshInstances }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [uploadResult, setUploadResult] = useState(null);
@@ -20,12 +21,15 @@ export const UploadPage = () => {
   const [aiRecommendation, setAiRecommendation] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
 
-  // Auto-redirect to dashboard after successful upload
+  const promptUpload = location.state?.promptUpload || instances.length === 0;
+  const promptMessage = location.state?.message;
+
+  // Auto-redirect to dashboard 3 seconds after successful upload
   useEffect(() => {
     if (uploadResult?.success) {
       const timer = setTimeout(() => {
         navigate('/app');
-      }, 1500);
+      }, 3000);
       return () => clearTimeout(timer);
     }
   }, [uploadResult, navigate]);
@@ -87,6 +91,9 @@ mail-server,35,45,50,100,690,30,us-east-1,100.00,healthy`;
       // Refresh instances list in local storage or trigger a refresh event
       if (result.success) {
         window.dispatchEvent(new Event('instancesUpdated'));
+        if (refreshInstances) {
+          refreshInstances();
+        }
 
         // Trigger AI analysis on the uploaded text
         setAiLoading(true);
@@ -132,6 +139,42 @@ mail-server,35,45,50,100,690,30,us-east-1,100.00,healthy`;
 
       {/* Main Content */}
       <div className="upload-content">
+        {/* Upload First Notification Banner */}
+        {promptUpload && !uploadResult?.success && (
+          <div style={{
+            padding: '16px 20px',
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(147, 51, 234, 0.15))',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            borderRadius: '12px',
+            marginBottom: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '14px'
+          }}>
+            <div style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '50%',
+              background: 'rgba(59, 130, 246, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#3b82f6',
+              flexShrink: 0
+            }}>
+              <UploadCloud size={24} />
+            </div>
+            <div>
+              <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                Upload Server Data First
+              </h4>
+              <p style={{ margin: '4px 0 0 0', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                {promptMessage || 'No server metrics found for your account. Please upload your CSV file first to generate the dashboard and AI optimization recommendations.'}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Error Message */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
@@ -185,6 +228,21 @@ mail-server,35,45,50,100,690,30,us-east-1,100.00,healthy`;
                 </div>
               )}
             </div>
+
+            {uploadResult.success && (
+              <div className="mt-4 pt-3 border-t border-green-200 flex items-center justify-between flex-wrap gap-3">
+                <span className="text-sm font-medium text-green-800">
+                  🎉 Server data saved! Redirecting to your dashboard in 3s...
+                </span>
+                <button
+                  onClick={() => navigate('/app')}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm cursor-pointer"
+                >
+                  <LayoutDashboard size={16} />
+                  Go to Dashboard 🚀
+                </button>
+              </div>
+            )}
           </div>
         )}
 

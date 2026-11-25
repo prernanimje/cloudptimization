@@ -3,18 +3,25 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load .env from project root (parent of backend directory)
-env_path = Path(__file__).parent.parent.parent / ".env"
-load_dotenv(dotenv_path=env_path, verbose=True)
+# Ensure we prioritize backend/.env
+backend_dir = Path(__file__).resolve().parent.parent
+backend_env = backend_dir / ".env"
+if backend_env.exists():
+    load_dotenv(backend_env, override=True)
+else:
+    load_dotenv()
 
-# Database - PostgreSQL connection (REQUIRED)
-# Must be set in .env file with DATABASE_URL variable
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise ValueError(
-        "DATABASE_URL environment variable is not set. "
-        "Please ensure .env file contains DATABASE_URL with PostgreSQL connection string."
-    )
+# Database connection
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "sqlite:///./cloud_optimization.db"
+)
+
+# If using SQLite relative path, anchor it to backend_dir so it resolves consistently
+if DATABASE_URL.startswith("sqlite:///./") or DATABASE_URL.startswith("sqlite:////."):
+    rel_db_name = DATABASE_URL.split("sqlite:///./")[-1]
+    db_file_path = (backend_dir / rel_db_name).resolve()
+    DATABASE_URL = f"sqlite:///{db_file_path.as_posix()}"
 
 # API Keys
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "your-openai-api-key-here")

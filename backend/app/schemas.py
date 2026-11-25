@@ -80,6 +80,7 @@ class InstanceUpdate(BaseModel):
 class InstanceResponse(InstanceBase):
     """Instance response with ID and metadata"""
     id: int
+    user_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
     metrics: List[MetricResponse] = []

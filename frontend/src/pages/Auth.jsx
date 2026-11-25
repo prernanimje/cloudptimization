@@ -20,10 +20,17 @@ const AuthPage = ({ initialMode = 'login' }) => {
         try {
             setError('');
             setLoading(true);
-            await login(username, password);
+            await login(username.trim(), password);
             navigate('/app');
         } catch (err) {
-            setError('Failed to log in. Please check your credentials.');
+            const detail = err.response?.data?.detail;
+            if (detail) {
+                setError(typeof detail === 'string' ? detail : JSON.stringify(detail));
+            } else if (err.response?.status === 500) {
+                setError('Cannot reach backend server. Please ensure the backend is running on port 8000.');
+            } else {
+                setError('Failed to log in. Please check your credentials.');
+            }
             console.error(err);
         } finally {
             setLoading(false);
@@ -35,10 +42,17 @@ const AuthPage = ({ initialMode = 'login' }) => {
         try {
             setError('');
             setLoading(true);
-            await register(email, username, password);
-            navigate('/app/upload');
+            await register(email.trim(), username.trim(), password);
+            navigate('/app');
         } catch (err) {
-            setError('Failed to create account. User might already exist.');
+            const detail = err.response?.data?.detail;
+            if (detail) {
+                setError(typeof detail === 'string' ? detail : JSON.stringify(detail));
+            } else if (err.response?.status === 500) {
+                setError('Cannot reach backend server. Please ensure the backend is running on port 8000.');
+            } else {
+                setError('Failed to create account. Please check your information.');
+            }
             console.error(err);
         } finally {
             setLoading(false);
@@ -99,14 +113,14 @@ const AuthPage = ({ initialMode = 'login' }) => {
                 {isLogin && (
                     <form onSubmit={handleLoginSubmit} className="auth-form">
                         <div className="auth-form-group">
-                            <label className="auth-form-label">Username</label>
+                            <label className="auth-form-label">Username or Email</label>
                             <input
                                 type="text"
                                 required
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 className="auth-form-input"
-                                placeholder="Enter your username"
+                                placeholder="Enter your username or email"
                             />
                         </div>
                         <div className="auth-form-group">

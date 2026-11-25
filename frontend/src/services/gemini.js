@@ -1,22 +1,22 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// Initialize the Gemini API with the key from our environment variables
-// Note: In Vite, environment variables must be prefixed with VITE_
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-
-// Create a generic fallback if no key is provided
-export const isGeminiConfigured = () => {
-    return API_KEY !== undefined && API_KEY !== '' && API_KEY !== 'your-gemini-api-key-here';
+// Clean and extract API key from environment variables
+const getApiKey = () => {
+    const rawKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+    return rawKey.replace(/^["']|["']$/g, '').trim();
 };
 
-const genAI = isGeminiConfigured() ? new GoogleGenerativeAI(API_KEY) : null;
+export const isGeminiConfigured = () => {
+    const key = getApiKey();
+    return Boolean(key && key !== 'your-gemini-api-key-here');
+};
 
-// Define our fallback cascade of models
+// Fallback cascade using currently supported Gemini models
 const fallbackModels = [
     "gemini-2.5-flash",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro",
-    "gemini-1.0-pro"
+    "gemini-2.5-flash-lite",
+    "gemini-flash-latest",
+    "gemini-pro-latest"
 ];
 /**
  * Generate a response using Google Gemini
@@ -26,8 +26,17 @@ const fallbackModels = [
  * @returns {Promise<string>} The AI response text
  */
 export const generateGeminiResponse = async (prompt, contextData, fileData = null) => {
-    if (!isGeminiConfigured() || !genAI) {
+    const key = getApiKey();
+    if (!key || key === 'your-gemini-api-key-here') {
         return "Error: Gemini API Key is missing. Please add VITE_GEMINI_API_KEY to your frontend/.env file.";
+    }
+
+    let genAI;
+    try {
+        genAI = new GoogleGenerativeAI(key);
+    } catch (err) {
+        console.error("Failed to initialize GoogleGenerativeAI client:", err);
+        return "Error: Invalid Gemini API Key format.";
     }
 
     // Construct a master prompt giving Gemini context about the application and the selected instance
@@ -69,7 +78,7 @@ export const generateGeminiResponse = async (prompt, contextData, fileData = nul
 
     let lastError = null;
 
-    // Iterate through our fallback models if rate limits are hit
+    // Iterate through our fallback models
     for (const modelName of fallbackModels) {
         try {
             const currentModel = genAI.getGenerativeModel({ model: modelName });
@@ -79,19 +88,12 @@ export const generateGeminiResponse = async (prompt, contextData, fileData = nul
         } catch (error) {
             console.warn(`Gemini API Error with model ${modelName}:`, error.message);
             lastError = error;
-            // Only continue to the next model if it's a 429 Quota/Rate Limit error
-            const errMsg = error.message || '';
-            if (errMsg.includes('429') || errMsg.includes('Quota exceeded') || errMsg.includes('Resource has been exhausted')) {
-                console.log(`Falling back from ${modelName} due to quota limits...`);
-                continue; // Try the next model in the loop
-            } else {
-                // If it's a different error (e.g., auth failure, safety block), break and return it
-                break;
-            }
+            // Continue trying other fallback models
+            continue;
         }
     }
 
     // If we exhaust all models or break early, return the graceful user-facing error containing our final catch
     console.error("All Gemini API fallbacks exhausted or failed:", lastError);
-    return "I encountered an error trying to connect to Google Gemini (or all model quotas are temporarily exhausted). Please check your API key and connection, or retry in a few moments.";
+    return "I encountered an error trying to connect to Google Gemini. Please check your API key and connection, or retry in a few moments.";
 };

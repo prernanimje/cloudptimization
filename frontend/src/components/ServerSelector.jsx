@@ -9,7 +9,7 @@ export const ServerSelector = ({ instances = [], selectedInstance = null, onSele
   const [isOpen, setIsOpen] = React.useState(false);
 
   // Get display name
-  const displayName = selectedInstance?.name || 'Select a server...';
+  const displayName = selectedInstance?.name || (instances.length === 0 ? 'No servers (Upload CSV first)' : 'Select a server...');
 
   return (
     <div className="relative w-full min-w-[350px] max-w-xl">
@@ -31,8 +31,9 @@ export const ServerSelector = ({ instances = [], selectedInstance = null, onSele
       {isOpen && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[20px] shadow-xl z-10 max-h-96 overflow-y-auto hide-scrollbar">
           {instances.length === 0 ? (
-            <div className="px-4 py-3 text-[var(--text-secondary)] text-center">
-              No servers available. Upload data first.
+            <div className="px-4 py-4 text-center">
+              <p className="text-[var(--text-secondary)] text-sm mb-1">No server data available.</p>
+              <p className="text-blue-400 text-xs font-semibold">Please upload your CSV file first</p>
             </div>
           ) : (
             instances.map((instance) => (

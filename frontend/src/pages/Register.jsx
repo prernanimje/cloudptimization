@@ -20,11 +20,10 @@ const Register = () => {
             setError('');
             setLoading(true);
             await register(email, username, password);
-            navigate('/app/upload');
+            navigate('/app');
         } catch (err) {
-            const errorMsg = err.response?.data?.detail || err.message || 'Failed to create account';
-            setError(`Error: ${errorMsg}`);
-            console.error('Registration error:', err);
+            setError('Failed to create account. User might already exist.');
+            console.error(err);
         } finally {
             setLoading(false);
         }

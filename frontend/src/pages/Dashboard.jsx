@@ -1,6 +1,10 @@
+/**
+ * Main Dashboard Page - Shows metrics and recommendations for one server
+ */
+
 import React, { useState, useEffect } from 'react';
-import { AlertCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { AlertCircle, PlayCircle, UploadCloud } from 'lucide-react';
 
 import InfoCards from '../components/InfoCards';
 import CPUChart from '../components/CPUChart';
@@ -14,36 +18,26 @@ import ActiveAlerts from '../components/ActiveAlerts';
 import { analysisAPI, metricsAPI, healthAPI } from '../api';
 import '../styles/DashboardStyle.css';
 
-// Animation variants for premium feel
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.2, // Consistent stagger timing
-      delayChildren: 0.1
-    }
-  }
-};
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 40 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 1.2, // Slower, more graceful entry as requested
-      ease: [0.25, 1, 0.5, 1] // Very smooth curve
-    }
-  }
-};
-
-export const Dashboard = ({ instances, selectedInstance, setSelectedInstance, refreshInstances }) => {
+export const Dashboard = ({ instances = [], selectedInstance, setSelectedInstance, refreshInstances, instancesLoading = false }) => {
+  const navigate = useNavigate();
   const [analysis, setAnalysis] = useState(null);
   const [metrics, setMetrics] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Auto-redirect if user has no uploaded server data
+  useEffect(() => {
+    if (!instancesLoading && (!instances || instances.length === 0)) {
+      navigate('/app/upload', {
+        state: {
+          promptUpload: true,
+          message: 'Please upload your server data CSV first to view the dashboard.'
+        },
+        replace: true
+      });
+    }
+  }, [instancesLoading, instances, navigate]);
 
   // Fetch data when instance is selected
   useEffect(() => {
@@ -95,7 +89,7 @@ export const Dashboard = ({ instances, selectedInstance, setSelectedInstance, re
         });
 
       // Fire-and-forget health check; no need to block the UI
-      healthAPI.checkInstanceHealth(selectedInstance.id).catch(() => { });
+      healthAPI.checkInstanceHealth(selectedInstance.id).catch(() => {});
     } catch (err) {
       console.error('Failed to load instance data:', err);
     } finally {
@@ -103,43 +97,81 @@ export const Dashboard = ({ instances, selectedInstance, setSelectedInstance, re
     }
   };
 
-  if (loading && !selectedInstance) {
+  if (instancesLoading || (loading && !selectedInstance)) {
     return (
-      <div className="dashboard-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#a1a1aa' }}>Loading dashboard...</p>
+      <div className="dashboard-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '16px' }}>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+        <p style={{ color: 'var(--text-secondary)' }}>Loading dashboard...</p>
+      </div>
+    );
+  }
+
+  if (!instances || instances.length === 0) {
+    return (
+      <div className="dashboard-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
+        <div className="dark-card" style={{ maxWidth: '520px', width: '100%', padding: '40px', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(59, 130, 246, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6' }}>
+            <UploadCloud size={32} />
+          </div>
+          <h2 style={{ color: 'var(--text-primary)', margin: 0, fontSize: '1.5rem', fontWeight: 600 }}>
+            No Cloud Server Data Found
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', margin: 0, lineHeight: 1.6, fontSize: '0.95rem' }}>
+            Please upload your cloud server CSV file first to generate real-time metrics, cost distribution, and AI optimization recommendations.
+          </p>
+          <button
+            onClick={() => navigate('/app/upload', {
+              state: {
+                promptUpload: true,
+                message: 'Please upload your server data CSV first to view the dashboard.'
+              },
+              replace: true
+            })}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 24px',
+              borderRadius: '8px',
+              background: '#3b82f6',
+              color: '#fff',
+              fontWeight: 600,
+              border: 'none',
+              cursor: 'pointer',
+              marginTop: '8px'
+            }}
+          >
+            <UploadCloud size={18} />
+            Go to Upload Section
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <motion.div
-      className="dashboard-container"
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-    >
+    <div className="dashboard-container">
       {/* Error Message */}
       {error && (
-        <motion.div
-          variants={cardVariants}
-          style={{ padding: '16px', background: 'rgba(220, 38, 38, 0.1)', border: '1px solid #dc2626', color: '#fca5a5', borderRadius: '20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}
-        >
+        <div style={{ padding: '16px', background: 'rgba(220, 38, 38, 0.1)', border: '1px solid #dc2626', color: '#fca5a5', borderRadius: '8px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <AlertCircle />
           <span>{error}</span>
-        </motion.div>
+        </div>
       )}
 
       {selectedInstance && (
         <>
           {/* Main Content Layout Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px', marginBottom: '32px' }}>
+            {/* Responsively handled via CSS or inline styles: normally you'd use a class, but we can do inline grid for large screens */}
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 13fr) minmax(0, 3fr)', gap: '32px' }}>
 
               {/* Left Column: CPU, RAM, Cost */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', height: '100%' }}>
-                <motion.div className="dark-card" variants={cardVariants} style={{ padding: '24px' }}>
+                <div className="dark-card stagger-card stagger-delay-1" style={{ padding: '24px' }}>
                   <h3 className="section-title" style={{ marginTop: 0, marginBottom: '24px' }}>System Performance</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    {/* Inner CPU Card */}
                     <div className="monitor-card">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                         <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00f3ff', boxShadow: '0 0 5px #00f3ff' }}></div>
@@ -148,6 +180,7 @@ export const Dashboard = ({ instances, selectedInstance, setSelectedInstance, re
                       <CPUChart data={metrics} loading={loading} />
                     </div>
 
+                    {/* Inner RAM Card */}
                     <div className="monitor-card">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                         <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ff00f3', boxShadow: '0 0 5px #ff00f3' }}></div>
@@ -156,11 +189,11 @@ export const Dashboard = ({ instances, selectedInstance, setSelectedInstance, re
                       <RAMChart data={metrics} loading={loading} />
                     </div>
                   </div>
-                </motion.div>
+                </div>
 
                 {/* Cost Analysis */}
                 {analysis && (
-                  <motion.div className="dark-card" variants={cardVariants}>
+                  <div className="dark-card stagger-card stagger-delay-2">
                     <h4 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '24px' }}>Cost Analysis & Insights</h4>
                     <div className="cost-grid">
                       <div className="cost-card cost-card-blue">
@@ -185,18 +218,18 @@ export const Dashboard = ({ instances, selectedInstance, setSelectedInstance, re
                         <span className="cost-value-green">${analysis.recommendations.reduce((sum, r) => sum + r.savings, 0).toFixed(2)}</span>
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 )}
 
                 {/* System Health Alerts */}
-                <motion.div variants={cardVariants} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <ActiveAlerts alerts={alerts} />
-                </motion.div>
+                </div>
               </div>
 
               {/* Right Column: Quick Stats */}
-              <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '24px' }}>
-                <motion.div variants={cardVariants} style={{ flex: 'none' }}>
+              <div className="stagger-card stagger-delay-3" style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '24px' }}>
+                <div style={{ flex: 'none' }}>
                   <InfoCards
                     region={selectedInstance.region}
                     monthlyCost={selectedInstance.monthly_cost}
@@ -205,8 +238,9 @@ export const Dashboard = ({ instances, selectedInstance, setSelectedInstance, re
                     ramUsage={selectedInstance.ram_usage}
                     storageUsage={selectedInstance.storage_usage}
                   />
-                </motion.div>
-                <motion.div className="dark-card" variants={cardVariants} style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column' }}>
+                </div>
+                {/* Cost Breakdown Mini Graph */}
+                <div className="dark-card" style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column' }}>
                   <h3 className="section-title" style={{ marginTop: 0, marginBottom: '8px', fontSize: '1.1rem' }}>Cost Breakdown Distribution</h3>
                   <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <CostBreakdownPieChart
@@ -216,36 +250,38 @@ export const Dashboard = ({ instances, selectedInstance, setSelectedInstance, re
                       storageUsage={selectedInstance.storage_usage}
                     />
                   </div>
-                </motion.div>
+                </div>
               </div>
 
             </div>
           </div>
 
           {/* Storage and Uptime Full Width Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '32px' }}>
-            <motion.div className="dark-card" variants={cardVariants}>
+          <div className="stagger-card stagger-delay-4" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '32px' }}>
+            <div className="dark-card">
               <StorageChart
                 storageUsage={selectedInstance.storage_usage}
                 storageCapacity={selectedInstance.storage_capacity}
               />
-            </motion.div>
-            <motion.div className="dark-card" variants={cardVariants}>
+            </div>
+            <div className="dark-card">
               <UptimeVisualization
                 uptimeHours={selectedInstance.uptime_hours}
                 downtimeHours={selectedInstance.downtime_hours}
                 status={selectedInstance.status}
               />
-            </motion.div>
+            </div>
           </div>
 
-          <motion.div className="dark-card" variants={cardVariants}>
+          {/* AI Recommendations */}
+          {/* <h3 className="section-title">Smart Action Center</h3> */}
+          <div className="dark-card stagger-card stagger-delay-5">
             <RecommendationsCard instance={selectedInstance} analysis={analysis} loading={loading} />
-          </motion.div>
+          </div>
 
         </>
       )}
-    </motion.div>
+    </div>
   );
 };
 

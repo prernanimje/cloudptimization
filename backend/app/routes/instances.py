@@ -1,12 +1,13 @@
 """Routes for managing cloud instances"""
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 import logging
 
 from ..database import get_db
 from ..schemas import InstanceCreate, InstanceUpdate, InstanceResponse
-from ..models import Instance
+from ..models import Instance, User
+from ..utils.security import get_current_user, get_optional_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -14,29 +15,33 @@ router = APIRouter()
 
 
 @router.get("/instances", response_model=List[InstanceResponse])
-async def list_instances(db: Session = Depends(get_db)):
+async def list_instances(
+    current_user: Optional[User] = Depends(get_optional_current_user),
+    db: Session = Depends(get_db)
+):
     """
-    Get all cloud instances
-    
-    Returns list of all instances with their current metrics
+    Get all cloud instances for the authenticated user.
+    New users with no uploaded data will receive an empty list.
     """
-    instances = db.query(Instance).all()
+    if not current_user:
+        return []
+    instances = db.query(Instance).filter(Instance.user_id == current_user.id).all()
     return instances
 
 
 @router.post("/instances", response_model=InstanceResponse)
-async def create_instance(instance: InstanceCreate, db: Session = Depends(get_db)):
+async def create_instance(
+    instance: InstanceCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """
-    Create a new cloud instance
-    
-    Args:
-        instance: Instance data (name, CPU%, RAM%, Storage%, region, cost, etc.)
-        
-    Returns:
-        Created instance with ID
+    Create a new cloud instance for current user
     """
-    # Check if instance already exists
-    existing = db.query(Instance).filter(Instance.name == instance.name).first()
+    existing = db.query(Instance).filter(
+        Instance.name == instance.name,
+        Instance.user_id == current_user.id
+    ).first()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -44,11 +49,13 @@ async def create_instance(instance: InstanceCreate, db: Session = Depends(get_db
         )
     
     try:
-        db_instance = Instance(**instance.dict())
+        instance_dict = instance.dict()
+        instance_dict["user_id"] = current_user.id
+        db_instance = Instance(**instance_dict)
         db.add(db_instance)
         db.commit()
         db.refresh(db_instance)
-        logger.info(f"Created instance: {instance.name}")
+        logger.info(f"Created instance: {instance.name} for user {current_user.username}")
         return db_instance
     except Exception as e:
         db.rollback()
@@ -57,17 +64,18 @@ async def create_instance(instance: InstanceCreate, db: Session = Depends(get_db
 
 
 @router.get("/instances/{instance_id}", response_model=InstanceResponse)
-async def get_instance(instance_id: int, db: Session = Depends(get_db)):
+async def get_instance(
+    instance_id: int,
+    current_user: Optional[User] = Depends(get_optional_current_user),
+    db: Session = Depends(get_db)
+):
     """
-    Get details of a specific instance
-    
-    Args:
-        instance_id: ID of the instance
-        
-    Returns:
-        Instance details with all metrics
+    Get details of a specific instance for current user
     """
-    instance = db.query(Instance).filter(Instance.id == instance_id).first()
+    query = db.query(Instance).filter(Instance.id == instance_id)
+    if current_user:
+        query = query.filter(Instance.user_id == current_user.id)
+    instance = query.first()
     if not instance:
         raise HTTPException(status_code=404, detail="Instance not found")
     return instance
@@ -77,19 +85,16 @@ async def get_instance(instance_id: int, db: Session = Depends(get_db)):
 async def update_instance(
     instance_id: int,
     instance_data: InstanceUpdate,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Update an instance's metrics
-    
-    Args:
-        instance_id: ID of the instance to update
-        instance_data: New metrics (CPU%, RAM%, Storage%, status, etc.)
-        
-    Returns:
-        Updated instance
     """
-    instance = db.query(Instance).filter(Instance.id == instance_id).first()
+    instance = db.query(Instance).filter(
+        Instance.id == instance_id,
+        Instance.user_id == current_user.id
+    ).first()
     if not instance:
         raise HTTPException(status_code=404, detail="Instance not found")
     
@@ -110,17 +115,18 @@ async def update_instance(
 
 
 @router.delete("/instances/{instance_id}")
-async def delete_instance(instance_id: int, db: Session = Depends(get_db)):
+async def delete_instance(
+    instance_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """
-    Delete an instance
-    
-    Args:
-        instance_id: ID of the instance to delete
-        
-    Returns:
-        Success message
+    Delete an instance belonging to the current user
     """
-    instance = db.query(Instance).filter(Instance.id == instance_id).first()
+    instance = db.query(Instance).filter(
+        Instance.id == instance_id,
+        Instance.user_id == current_user.id
+    ).first()
     if not instance:
         raise HTTPException(status_code=404, detail="Instance not found")
     

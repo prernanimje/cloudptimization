@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { LayoutDashboard, UploadCloud, Bot, Moon, Sun, User } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import UploadPage from './pages/Upload';
@@ -11,7 +11,6 @@ import Auth from './pages/Auth';
 import LandingPage from './pages/LandingPage';
 import ServerSelector from './components/ServerSelector';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { Navigate } from 'react-router-dom';
 import { instancesAPI } from './api';
 import './App.css';
 import './styles/AppLayout.css';
@@ -20,6 +19,7 @@ const AIChatbotOverlay = lazy(() => import('./components/AIChatbotOverlay'));
 
 function AppContent() {
   const [instances, setInstances] = useState([]);
+  const [instancesLoading, setInstancesLoading] = useState(true);
   const [selectedInstance, setSelectedInstance] = useState(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [theme, setTheme] = useState(() => {
@@ -32,7 +32,7 @@ function AppContent() {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate('/', { replace: true });
   };
 
   useEffect(() => {
@@ -51,30 +51,62 @@ function AppContent() {
 
   const loadInstances = async (silent = false) => {
     try {
+      if (!silent) setInstancesLoading(true);
       const response = await instancesAPI.getAllInstances();
-      setInstances(response);
-      if (response.length > 0 && !selectedInstance && !silent) {
-        setSelectedInstance(response[0]);
-      } else if (response.length > 0 && selectedInstance && silent) {
-        const updatedSelected = response.find(i => i.id === selectedInstance?.id);
-        if (updatedSelected) setSelectedInstance(updatedSelected);
+      const list = Array.isArray(response) ? response : [];
+      setInstances(list);
+      if (list.length > 0) {
+        if (!selectedInstance && !silent) {
+          setSelectedInstance(list[0]);
+        } else if (selectedInstance) {
+          const updatedSelected = list.find(i => i.id === selectedInstance?.id);
+          setSelectedInstance(updatedSelected || list[0]);
+        }
+      } else {
+        setSelectedInstance(null);
       }
+      return list;
     } catch (err) {
       console.error('Failed to load instances', err);
+      setInstances([]);
+      setSelectedInstance(null);
+      return [];
+    } finally {
+      if (!silent) setInstancesLoading(false);
     }
   };
 
   useEffect(() => {
-    loadInstances();
+    if (currentUser) {
+      loadInstances().then((list) => {
+        // If user has no uploaded instances and is on dashboard, redirect to upload
+        if ((!list || list.length === 0) && (location.pathname === '/app' || location.pathname === '/app/')) {
+          navigate('/app/upload', {
+            state: {
+              promptUpload: true,
+              message: 'Please upload your server data CSV first to view the dashboard.'
+            },
+            replace: true
+          });
+        }
+      });
+    }
 
     // Listen for custom event from Upload page to refresh instances
-    const handleInstancesUpdated = () => loadInstances();
+    const handleInstancesUpdated = () => {
+      loadInstances().then((list) => {
+        if (list && list.length > 0 && (location.pathname === '/app/upload' || location.pathname === '/app/upload/')) {
+          navigate('/app', { replace: true });
+        }
+      });
+    };
+
     window.addEventListener('instancesUpdated', handleInstancesUpdated);
 
     return () => {
       window.removeEventListener('instancesUpdated', handleInstancesUpdated);
     };
-  }, []);
+  }, [currentUser]);
 
   return (
     <div className="app-layout-container">
@@ -94,6 +126,17 @@ function AppContent() {
           <Link
             to="/app"
             className={`sidebar-nav-item ${location.pathname === '/app' ? 'active' : ''}`}
+            onClick={(e) => {
+              if (!instancesLoading && instances.length === 0) {
+                e.preventDefault();
+                navigate('/app/upload', {
+                  state: {
+                    promptUpload: true,
+                    message: 'Please upload your server data CSV first to view the dashboard.'
+                  }
+                });
+              }
+            }}
           >
             <LayoutDashboard size={20} />
             <span>Dashboard</span>
@@ -176,10 +219,12 @@ function AppContent() {
               </div>
             </div>
           ) : (
-            <div className="header-status-card" style={{ opacity: 0.5 }}>
+            <div className="header-status-card" style={{ opacity: 0.6 }}>
               <div className="status-info">
                 <span className="status-label">System Monitor</span>
-                <span className="status-value">Select server to view status</span>
+                <span className="status-value">
+                  {instances.length === 0 ? 'No server data • Upload CSV first' : 'Select server to view status'}
+                </span>
               </div>
             </div>
           )}
@@ -234,10 +279,19 @@ function AppContent() {
                   selectedInstance={selectedInstance}
                   setSelectedInstance={setSelectedInstance}
                   refreshInstances={loadInstances}
+                  instancesLoading={instancesLoading}
                 />
               }
             />
-            <Route path="/upload" element={<UploadPage />} />
+            <Route
+              path="/upload"
+              element={
+                <UploadPage
+                  instances={instances}
+                  refreshInstances={loadInstances}
+                />
+              }
+            />
             <Route
               path="*"
               element={
@@ -246,6 +300,7 @@ function AppContent() {
                   selectedInstance={selectedInstance}
                   setSelectedInstance={setSelectedInstance}
                   refreshInstances={loadInstances}
+                  instancesLoading={instancesLoading}
                 />
               }
             />
@@ -258,7 +313,7 @@ function AppContent() {
 
 const PrivateRoute = ({ children }) => {
   const { currentUser } = useAuth();
-  return currentUser ? children : <Navigate to="/auth" />;
+  return currentUser ? children : <Navigate to="/" replace />;
 };
 
 function App() {

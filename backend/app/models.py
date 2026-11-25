@@ -16,12 +16,16 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    # Relationships
+    instances = relationship("Instance", back_populates="user", cascade="all, delete-orphan")
+
 class Instance(Base):
     """Cloud server instance"""
     __tablename__ = "instances"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=True)
+    name = Column(String, index=True)
     cpu_usage = Column(Float, default=0)           # 0-100%
     ram_usage = Column(Float, default=0)           # 0-100%
     storage_usage = Column(Float, default=0)       # 0-100%
@@ -35,6 +39,7 @@ class Instance(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
+    user = relationship("User", back_populates="instances")
     metrics = relationship("Metric", back_populates="instance", cascade="all, delete-orphan")
     health_alerts = relationship("HealthAlert", back_populates="instance", cascade="all, delete-orphan")
 

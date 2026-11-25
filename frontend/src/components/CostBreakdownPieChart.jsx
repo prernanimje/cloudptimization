@@ -19,7 +19,7 @@ const CostBreakdownPieChart = ({ monthlyCost, cpuUsage, ramUsage, storageUsage }
     const CustomTooltip = ({ active, payload }) => {
         if (active && payload && payload.length) {
             return (
-                <div style={{ background: '#18181b', border: '1px solid #3f3f46', padding: '12px', borderRadius: '20px', color: '#fff' }}>
+                <div style={{ background: '#18181b', border: '1px solid #3f3f46', padding: '12px', borderRadius: '8px', color: '#fff' }}>
                     <p style={{ margin: 0, fontWeight: 600 }}>{payload[0].name}</p>
                     <p style={{ margin: 0, color: payload[0].payload.color }}>
                         Estimated: ${payload[0].value.toFixed(2)} / mo

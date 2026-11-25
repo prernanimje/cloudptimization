@@ -6,8 +6,9 @@ from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Instance
+from ..models import Instance, User
 from ..schemas import UploadResponse
+from ..utils.security import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -15,19 +16,13 @@ router = APIRouter()
 
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_instances(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_instances(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
     """
-    Upload CSV file with instance data
-    
-    Expected CSV format:
-    name,cpu_usage,ram_usage,storage_usage,uptime_hours,region,monthly_cost,status
-    web-server-1,45,60,70,720,us-east-1,150.00,healthy
-    
-    Args:
-        file: CSV file upload
-        
-    Returns:
-        Upload result with count of created/updated instances
+    Upload CSV file with instance data for the authenticated user
     """
     try:
         # Read uploaded file
@@ -50,8 +45,11 @@ async def upload_instances(file: UploadFile = File(...), db: Session = Depends(g
                 
                 instance_name = row['name'].strip()
                 
-                # Check if instance exists
-                existing = db.query(Instance).filter(Instance.name == instance_name).first()
+                # Check if instance exists for THIS user
+                existing = db.query(Instance).filter(
+                    Instance.name == instance_name,
+                    Instance.user_id == current_user.id
+                ).first()
                 
                 # Parse and validate numeric fields
                 cpu_usage = float(row.get('cpu_usage', 0))
@@ -83,8 +81,9 @@ async def upload_instances(file: UploadFile = File(...), db: Session = Depends(g
                     db.add(existing)
                     instances_updated += 1
                 else:
-                    # Create new instance
+                    # Create new instance belonging to this user
                     new_instance = Instance(
+                        user_id=current_user.id,
                         name=instance_name,
                         cpu_usage=cpu_usage,
                         ram_usage=ram_usage,

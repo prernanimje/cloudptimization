@@ -90,7 +90,7 @@ export const UptimeVisualization = ({ uptimeHours = 720, downtimeHours = 0, stat
           <div style={{
             background: 'rgba(16, 185, 129, 0.05)',
             border: '1px solid rgba(16, 185, 129, 0.2)',
-            borderRadius: '20px',
+            borderRadius: '10px',
             padding: '12px 16px',
             display: 'flex',
             justifyContent: 'space-between',
@@ -110,7 +110,7 @@ export const UptimeVisualization = ({ uptimeHours = 720, downtimeHours = 0, stat
           <div style={{
             background: 'rgba(245, 158, 11, 0.05)',
             border: '1px solid rgba(245, 158, 11, 0.2)',
-            borderRadius: '20px',
+            borderRadius: '10px',
             padding: '12px 16px',
             display: 'flex',
             justifyContent: 'space-between',
@@ -130,7 +130,7 @@ export const UptimeVisualization = ({ uptimeHours = 720, downtimeHours = 0, stat
           <div style={{
             background: 'rgba(139, 92, 246, 0.05)',
             border: '1px solid rgba(139, 92, 246, 0.2)',
-            borderRadius: '20px',
+            borderRadius: '10px',
             padding: '12px 16px',
             display: 'flex',
             justifyContent: 'space-between',

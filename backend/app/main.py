@@ -41,6 +41,11 @@ app = FastAPI(
 configured_origins = [url.strip() for url in str(FRONTEND_URL).split(",") if url.strip()]
 allowed_origins = list(set([
     *configured_origins,
+    "https://cloudoptimization.com",
+    "http://cloudoptimization.com",
+    "https://www.cloudoptimization.com",
+    "http://www.cloudoptimization.com",
+    "https://cloud-optimization-ruby.vercel.app",
     "http://localhost:3000",
     "http://localhost:5173",
     "http://localhost:5174",
@@ -53,7 +58,9 @@ allowed_origins = list(set([
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_origin_regex=r"https?://.*(vercel\.app|netlify\.app|onrender\.com|railway\.app|localhost|127\.0\.0\.1).*",
+    allow_origin_regex=(
+        r"https?://.*(cloudoptimization\.com|vercel\.app|netlify\.app|onrender\.com|railway\.app|localhost|127\.0\.0\.1).*"
+    ),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

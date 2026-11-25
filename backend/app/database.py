@@ -1,4 +1,5 @@
 """Database connection and session management"""
+import os
 import sys
 from pathlib import Path
 
@@ -9,7 +10,7 @@ if str(backend_dir) not in sys.path:
 
 from sqlalchemy import create_engine  # noqa: E402
 from sqlalchemy.orm import sessionmaker  # noqa: E402
-from sqlalchemy.pool import StaticPool  # noqa: E402
+from sqlalchemy.pool import StaticPool, NullPool  # noqa: E402
 
 try:
     from app.config import DATABASE_URL  # noqa: E402
@@ -23,16 +24,20 @@ db_url = DATABASE_URL
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-# Create database engine
+# Create database engine with appropriate pooling
 engine_kwargs = {}
 if "sqlite" in db_url:
     engine_kwargs["poolclass"] = StaticPool
     engine_kwargs["connect_args"] = {"check_same_thread": False}
 else:
-    # Production PostgreSQL connection pool settings
-    engine_kwargs["pool_pre_ping"] = True
-    engine_kwargs["pool_size"] = 10
-    engine_kwargs["max_overflow"] = 20
+    # Serverless (e.g. Vercel) vs persistent server connection pooling
+    if os.getenv("VERCEL"):
+        # Serverless functions spin up/down frequently; NullPool prevents connection leaks
+        engine_kwargs["poolclass"] = NullPool
+    else:
+        engine_kwargs["pool_pre_ping"] = True
+        engine_kwargs["pool_size"] = 10
+        engine_kwargs["max_overflow"] = 20
 
 engine = create_engine(
     db_url,

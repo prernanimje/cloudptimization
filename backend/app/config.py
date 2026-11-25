@@ -11,11 +11,17 @@ if backend_env.exists():
 else:
     load_dotenv()
 
-# Database connection
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "sqlite:///./cloud_optimization.db"
+# Database connection (supports standard DATABASE_URL and Vercel Postgres auto-generated envs)
+DATABASE_URL = (
+    os.getenv("DATABASE_URL")
+    or os.getenv("POSTGRES_URL")
+    or os.getenv("POSTGRES_PRISMA_URL")
+    or "sqlite:///./cloud_optimization.db"
 )
+
+# Normalize postgres URL scheme for SQLAlchemy compatibility
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 # If using SQLite relative path, anchor it to backend_dir so it resolves consistently
 if DATABASE_URL.startswith("sqlite:///./") or DATABASE_URL.startswith("sqlite:////."):

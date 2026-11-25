@@ -1,5 +1,6 @@
 """FastAPI application entry point"""
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -71,13 +72,14 @@ async def startup_event():
         init_db()
         logger.info("✅ Database initialized successfully")
 
-        # Start Real-Time Simulation Engine
-        try:
-            from app.services.simulation import simulation_engine
-        except ImportError:
-            from .services.simulation import simulation_engine  # type: ignore
-        simulation_engine.start()
-        logger.info("✅ Simulation Engine started")
+        # Start Real-Time Simulation Engine (only on persistent servers, not serverless)
+        if not os.getenv("VERCEL"):
+            try:
+                from app.services.simulation import simulation_engine
+            except ImportError:
+                from .services.simulation import simulation_engine  # type: ignore
+            simulation_engine.start()
+            logger.info("✅ Simulation Engine started")
 
     except Exception as e:
         logger.error(f"⚠️  Database initialization warning: {str(e)}")
@@ -88,14 +90,15 @@ async def startup_event():
 async def shutdown_event():
     """Cleanup on application shutdown"""
     logger.info("🛑 Shutting down application...")
-    try:
+    if not os.getenv("VERCEL"):
         try:
-            from app.services.simulation import simulation_engine
-        except ImportError:
-            from .services.simulation import simulation_engine  # type: ignore
-        simulation_engine.stop()
-    except Exception as e:
-        logger.warning(f"Error stopping simulation engine: {e}")
+            try:
+                from app.services.simulation import simulation_engine
+            except ImportError:
+                from .services.simulation import simulation_engine  # type: ignore
+            simulation_engine.stop()
+        except Exception as e:
+            logger.warning(f"Error stopping simulation engine: {e}")
 
 
 # ============ ROUTES ============
